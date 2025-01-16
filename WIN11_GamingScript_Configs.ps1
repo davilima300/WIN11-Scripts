@@ -1,4 +1,6 @@
 # Autor: @davilima300
+# Script para otimização do Windows com foco em jogos
+
 # Bypass de restrições para execução automática do script
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
@@ -87,33 +89,16 @@ try {
     Write-Host "[ERRO] Falha ao desativar notificações: $_"
 }
 
-# - Desativar Barra de Jogos do Xbox
-try {
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2
-    Write-Host "[SUCESSO] Barra de Jogos do Xbox desativada."
-} catch {
-    Write-Host "[ERRO] Falha ao desativar Barra de Jogos do Xbox: $_"
-}
-
-# 8. Configuração do adaptador de rede para otimização de jogos
+# - Configurações do adaptador de rede para jogos
 try {
     $adapterName = (Get-NetAdapter | Where-Object { $_.Status -eq "Up" }).Name
     if ($adapterName) {
         Write-Host "[INFORMAÇÃO] Configurando adaptador de rede: $adapterName"
-
-        Set-NetAdapterAdvancedProperty -Name $adapterName -DisplayName "Advanced EEE" -DisplayValue "Disabled"
-        Set-NetAdapterAdvancedProperty -Name $adapterName -DisplayName "Auto Disable Gigabit" -DisplayValue "Disabled"
         Set-NetAdapterAdvancedProperty -Name $adapterName -DisplayName "Flow Control" -DisplayValue "Rx & Tx Enabled"
         Set-NetAdapterAdvancedProperty -Name $adapterName -DisplayName "Interrupt Moderation" -DisplayValue "Enabled"
-        Set-NetAdapterAdvancedProperty -Name $adapterName -DisplayName "Jumbo Packet" -DisplayValue "9014"
-        Set-NetAdapterAdvancedProperty -Name $adapterName -DisplayName "Speed & Duplex" -DisplayValue "1.0 Gbps Full Duplex"
-
         New-NetIPAddress -InterfaceAlias $adapterName -IPAddress 192.168.1.100 -PrefixLength 24 -DefaultGateway 192.168.1.1 -ErrorAction Stop
         Set-DnsClientServerAddress -InterfaceAlias $adapterName -ServerAddresses 1.1.1.1,8.8.8.8 -ErrorAction Stop
-
-        Write-Host "[SUCESSO] Configuração do adaptador de rede otimizada para jogos concluída."
+        Write-Host "[SUCESSO] Configuração do adaptador de rede otimizada."
     } else {
         Write-Host "[INFORMAÇÃO] Nenhum adaptador de rede ativo encontrado para configuração."
     }
@@ -121,5 +106,38 @@ try {
     Write-Host "[ERRO] Falha ao configurar adaptador de rede: $_"
 }
 
-Write-Host "`nTodas as configurações foram processadas com sucesso. Pressione qualquer tecla para sair..."
+# 8. Desativar Limitação de Largura de Banda
+try {
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched" -Name "NonBestEffortLimit" -Value 0 -PropertyType DWord -Force
+    Write-Host "[SUCESSO] Limitação de largura de banda desativada."
+} catch {
+    Write-Host "[ERRO] Falha ao desativar limitação de largura de banda: $_"
+}
+
+# 9. Priorizar Jogos no Gerenciador de Pacotes
+try {
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\QoS" -Name "GamingTrafficPriority" -Value 1 -PropertyType DWord -Force
+    Write-Host "[SUCESSO] Jogos priorizados no gerenciador de pacotes."
+} catch {
+    Write-Host "[ERRO] Falha ao priorizar jogos: $_"
+}
+
+# 10. Desativar Atualizações Automáticas
+try {
+    Stop-Service -Name wuauserv -Force
+    Set-Service -Name wuauserv -StartupType Disabled
+    Write-Host "[SUCESSO] Atualizações automáticas desativadas."
+} catch {
+    Write-Host "[ERRO] Falha ao desativar atualizações automáticas: $_"
+}
+
+# 11. Limpar Arquivos Temporários e Cache
+try {
+    Get-ChildItem -Path "C:\Windows\Temp", "C:\Users\$env:UserName\AppData\Local\Temp" -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+    Write-Host "[SUCESSO] Arquivos temporários e cache limpos."
+} catch {
+    Write-Host "[ERRO] Falha ao limpar arquivos temporários e cache: $_"
+}
+
+Write-Host "`nTodas as configurações foram aplicadas com sucesso!"
 Read-Host
