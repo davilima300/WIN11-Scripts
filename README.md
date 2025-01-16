@@ -48,7 +48,7 @@ Este projeto contém dois scripts principais:
 4. **Executar o Script:**  
    Inicie o script com o comando abaixo:  
    ```powershell
-   .\WIN11-GamingScript-Configs.ps1
+   .\WIN11_GamingScript_Configs.ps1
    ```
 
 ---
