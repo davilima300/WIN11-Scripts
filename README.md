@@ -29,27 +29,20 @@ Este projeto contém dois scripts principais:
 
 ### **Passos para Executar o Script**
 
-1. **Abrir o PowerShell como Administrador:**  
-   Clique com o botão direito no menu Iniciar, selecione **Windows PowerShell (Admin)**.
+# Executando o Script no PowerShell
 
-2. **Permitir Execução de Scripts:**  
-   Execute o comando abaixo no PowerShell para habilitar scripts locais:  
-   ```powershell
-   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
+## Passo 1: Abrir o PowerShell diretamente na pasta do script  
+1. Pressione `Win + E` para abrir o Explorador de Arquivos.  
+2. Navegue até a pasta onde o script foi baixado (normalmente `Downloads`).  
+3. Segure `Shift` e clique com o botão direito em um espaço vazio dentro da pasta.  
+4. Selecione **"Abrir o PowerShell aqui"**.  
 
-3. **Navegar até o Local do Script:**  
-   Use o comando `cd` para acessar a pasta onde o script está salvo.  
-   Exemplo:  
-   ```powershell
-   cd "C:\Users\davi\Downloads"
-   ```
+## Passo 2: Permitir a execução de scripts (se necessário)  
+No PowerShell, execute o seguinte comando:  
 
-4. **Executar o Script:**  
-   Inicie o script com o comando abaixo:  
-   ```powershell
-   .\WIN11_GamingScript_Configs.ps1
-   ```
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+
 
 ---
 
