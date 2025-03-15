@@ -1,6 +1,6 @@
 # WIN11-Scripts
 
-Scripts para automação da instalação e configuração do Windows 11 - GAMING!
+Scripts para automação da instalação e configuração do Windows 11 - GAMING! 🎮
 
 **Autor:** @Davilima300
 
@@ -13,16 +13,13 @@ Este projeto contém dois scripts principais:
 
 ### 🔧 Passos para Configuração
 
-1. **Preparar o Pendrive Bootável/ISO:**
-
+1. **Preparar o Pendrive Bootável/ISO:**  
    Certifique-se de que você já criou um pendrive bootável ou ISO do Windows 11 com ferramentas como **Rufus** ou **Media Creation Tool**.
 
-2. **Adicionar o Arquivo `autounattend.xml`:**
-
+2. **Adicionar o Arquivo `autounattend.xml`:**  
    Copie o arquivo `autounattend.xml` (fornecido neste projeto) para a raiz do seu pendrive/ISO, onde estão as pastas como **boot**, **efi**, **sources**, etc.
 
-3. **Iniciar a Instalação:**
-
+3. **Iniciar a Instalação:**  
    Conecte o pendrive ao computador e configure a BIOS/UEFI para iniciar pelo dispositivo USB. A instalação será automatizada com base nas configurações do arquivo `autounattend.xml`.
 
 ---
@@ -31,17 +28,16 @@ Este projeto contém dois scripts principais:
 
 ### 📌 Como Executar
 
-1. **Abrir o PowerShell como Administrador:**
-
+1. **Abrir o PowerShell como Administrador:**  
    - Pressione **Win + X** e selecione **Terminal (Admin)** ou **Windows PowerShell (Admin)**.
    - Confirme a permissão, se solicitado.
 
-2. **Definir a Política de Execução (se necessário):**
-
+2. **Definir a Política de Execução (se necessário):**  
    Execute o seguinte comando para permitir a execução de scripts confiáveis:
 
    ```powershell
    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+   ```
 
 ---
 
