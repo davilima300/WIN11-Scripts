@@ -33,13 +33,40 @@ Este projeto contém dois scripts principais:
 ### 📌 **Como Executar**  
 
 1️⃣ **Abrir o PowerShell como Administrador:**  
-   - Pressione `Win + X` e selecione **Terminal (Admin)** ou **PowerShell (Admin)**.  
+   - Pressione `Win + X` e selecione **Terminal (Admin)** ou **Windows PowerShell (Admin)**.  
    - Confirme a permissão, se solicitado.  
 
-2️⃣ **Executar o Script:**  
-   - **Arraste o arquivo do script (`.ps1`) para a janela do PowerShell.**  
-   - Pressione **Enter** para iniciar a execução.  
-
-💡 **Observação:** Caso a execução de scripts esteja bloqueada, rode antes:  
+2️⃣ **Definir a Política de Execução (se necessário):**  
+   - Antes de executar o script, você pode definir a política de execução para permitir a execução de scripts. Execute o seguinte comando:
    ```powershell
-   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser  -Force
+
+   Observação: Isso permite a execução de scripts que você criou ou baixou de fontes confiáveis.
+
+3️⃣ Navegar até o Diretório do Script:
+
+   Use o comando cd para navegar até o diretório onde o script está localizado. Por exemplo:
+
+   cd "C:\Caminho\Para\Seu\Script"
+
+4️⃣ Executar o Script:
+
+   Execute o script digitando .\NomeDoSeuScript.ps1 e pressione Enter.
+   Exemplo:
+
+   .\configuracao_windows11.ps1
+
+💡 Dicas Adicionais:
+   Verifique o Caminho do Script: Certifique-se de que o caminho do script está correto ao usar o comando cd.
+   Usar o PowerShell ISE: Se preferir, você pode abrir o PowerShell ISE (Integrated Scripting Environment) como administrador e carregar o script lá para facilitar    a execução e depuração.
+   Criar um Atalho: Para facilitar a execução futura, você pode criar um atalho para o script e configurá-lo para ser executado como administrador.
+
+   # Abrir PowerShell como Administrador
+   # Definir a política de execução
+   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser  -Force
+   
+   # Navegar até o diretório do script
+   cd "C:\Caminho\Para\Seu\Script"
+   
+   # Executar o script
+   .\configuracao_windows11.ps1
