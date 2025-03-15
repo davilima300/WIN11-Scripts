@@ -1,7 +1,7 @@
 # 🎮 WIN11-Scripts  
 Scripts para automação da instalação e configuração do Windows 11 - **GAMING!**  
 
-# 🚀 **Script de Automação para Instalação e Configuração do Windows 11**  
+# 🚀 **Script de Automação para Instalação e Configuração do Windows11**  
 
 **👤 Autor:** [@Davilima300](#)  
 
