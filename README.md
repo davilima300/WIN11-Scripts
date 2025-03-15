@@ -56,4 +56,4 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 cd "C:\Caminho\Para\Seu\Script"
 
 # Executar o script
-.\configuracao_windows11.ps1
+.\WIN11_GamingScript_Configs.ps1
