@@ -47,10 +47,6 @@ Este projeto contém dois scripts principais:
 - **Usar o PowerShell ISE:** Se preferir, abra o **PowerShell ISE** (Integrated Scripting Environment) como administrador e carregue o script para execução e depuração.
 - **Criar um Atalho:** Para facilitar futuras execuções, crie um atalho para o script e configure-o para ser executado como administrador.
 
----
-
-### 4. Exemplo de Comandos
-
 ```powershell
 # Abrir PowerShell como Administrador
 # Definir a política de execução
