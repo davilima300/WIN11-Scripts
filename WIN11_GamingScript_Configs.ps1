@@ -1,169 +1,205 @@
-# Autor: @davilima300
-# Script para otimizacao do Windows com foco em jogos
+<# 
+Autor: @davilima300
+Descrição: Script de otimização de Windows 10/11 focado em jogos.
+Compatível com PowerShell 5+
+#>
 
-# Bypass de restricoes para execucao automatica do script
+# =====================================
+# FUNÇÕES AUXILIARES
+# =====================================
+function Write-Log {
+    param(
+        [string]$Mensagem,
+        [string]$Tipo = "INFO"
+    )
+    switch ($Tipo.ToUpper()) {
+        "SUCESSO" { Write-Host "[SUCESSO] $Mensagem" -ForegroundColor Green }
+        "ERRO"    { Write-Host "[ERRO] $Mensagem" -ForegroundColor Red }
+        "INFO"    { Write-Host "[INFO] $Mensagem" -ForegroundColor Cyan }
+        default   { Write-Host "[LOG] $Mensagem" }
+    }
+}
+
+# =====================================
+# CONFIGURAÇÕES INICIAIS
+# =====================================
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+Write-Log "Iniciando otimização do Windows..." "INFO"
 
-# 0. Verificacao de versao do Windows
 if (-not ([System.Environment]::OSVersion.Version -ge [Version]"10.0")) {
-    Write-Host "[ERRO] Este script requer Windows 10 ou superior."
+    Write-Log "Este script requer Windows 10 ou superior." "ERRO"
     exit
 }
 
-# 1. Backup de configuracoes
-try {
-    reg export "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization" "C:\Backup\DeliveryOptimization.reg"
-    Write-Host "[SUCESSO] Backup de DeliveryOptimization realizado."
-} catch {
-    Write-Host "[ERRO] Falha ao realizar backup de DeliveryOptimization: $_"
+# Criar pasta de backup, se não existir
+$backupPath = "C:\Backup"
+if (-not (Test-Path $backupPath)) {
+    New-Item -ItemType Directory -Path $backupPath | Out-Null
+    Write-Log "Pasta de backup criada em $backupPath" "INFO"
 }
 
-# 2. Desativar "Permitir downloads de outros dispositivos"
+# =====================================
+# 1. BACKUP DE CONFIGURAÇÕES
+# =====================================
+try {
+    reg export "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization" "$backupPath\DeliveryOptimization.reg" /y | Out-Null
+    Write-Log "Backup de DeliveryOptimization realizado."
+} catch {
+    Write-Log "Falha ao realizar backup: $_" "ERRO"
+}
+
+# =====================================
+# 2. DESATIVAR DOWNLOADS ENTRE DISPOSITIVOS
+# =====================================
 try {
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization" -Name "DODownloadMode" -Value 0
-    Write-Host "[SUCESSO] Downloads de outros dispositivos desativados com sucesso."
+    Write-Log "Downloads de outros dispositivos desativados." "SUCESSO"
 } catch {
-    Write-Host "[ERRO] Falha ao desativar downloads de outros dispositivos: $_"
+    Write-Log "Falha ao desativar downloads entre dispositivos: $_" "ERRO"
 }
 
-# 3. Desativar dispositivo: AMD Crash Defender
+# =====================================
+# 3. DESATIVAR AMD CRASH DEFENDER
+# =====================================
 try {
-    $devenv = Get-WmiObject Win32_PnPEntity | Where-Object { $_.Name -like "*AMD Crash Defender*" }
-    if ($devenv) {
-        Disable-PnpDevice -InstanceId $devenv.DeviceID -Confirm:$false
-        Write-Host "[SUCESSO] AMD Crash Defender desativado."
+    $amdDevice = Get-PnpDevice | Where-Object { $_.FriendlyName -like "*AMD Crash Defender*" }
+    if ($amdDevice) {
+        Disable-PnpDevice -InstanceId $amdDevice.InstanceId -Confirm:$false
+        Write-Log "AMD Crash Defender desativado." "SUCESSO"
     } else {
-        Write-Host "[INFORMACAO] Dispositivo 'AMD Crash Defender' nao encontrado no sistema."
+        Write-Log "Dispositivo AMD Crash Defender não encontrado." "INFO"
     }
 } catch {
-    Write-Host "[ERRO] Falha ao desativar o dispositivo 'AMD Crash Defender': $_"
+    Write-Log "Erro ao desativar AMD Crash Defender: $_" "ERRO"
 }
 
-# 4. Desativar dispositivo: Timer de Eventos de Alta Precisao
+# =====================================
+# 4. DESATIVAR TIMER DE EVENTOS DE ALTA PRECISÃO
+# =====================================
 try {
-    $timerDevice = Get-WmiObject Win32_PnPEntity | Where-Object { $_.Name -like "*High Precision Event Timer*" }
-    if ($timerDevice) {
-        Disable-PnpDevice -InstanceId $timerDevice.DeviceID -Confirm:$false
-        Write-Host "[SUCESSO] Timer de Eventos de Alta Precisao desativado."
+    $hpet = Get-PnpDevice | Where-Object { $_.FriendlyName -like "*High Precision Event Timer*" }
+    if ($hpet) {
+        Disable-PnpDevice -InstanceId $hpet.InstanceId -Confirm:$false
+        Write-Log "Timer de Eventos de Alta Precisão desativado." "SUCESSO"
     } else {
-        Write-Host "[INFORMACAO] Dispositivo 'Timer de Eventos de Alta Precisao' nao encontrado."
+        Write-Log "HPET não encontrado." "INFO"
     }
 } catch {
-    Write-Host "[ERRO] Falha ao desativar 'Timer de Eventos de Alta Precisao': $_"
+    Write-Log "Falha ao desativar HPET: $_" "ERRO"
 }
 
-# 5. Configurar politica de grupo para nao incluir drivers nas atualizacoes
+# =====================================
+# 5. EXCLUIR DRIVERS DAS ATUALIZAÇÕES DE QUALIDADE
+# =====================================
 try {
     $policyPath = "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate"
-    if (-not (Test-Path $policyPath)) {
-        New-Item -Path $policyPath -Force | Out-Null
-    }
-    New-ItemProperty -Path $policyPath -Name "ExcludeWUDriversInQualityUpdate" -Value 1 -PropertyType DWord -Force | Out-Null
-    Write-Host "[SUCESSO] Politica de grupo configurada para excluir drivers nas atualizacoes de qualidade."
+    if (-not (Test-Path $policyPath)) { New-Item -Path $policyPath -Force | Out-Null }
+    Set-ItemProperty -Path $policyPath -Name "ExcludeWUDriversInQualityUpdate" -Value 1 -Type DWord
+    Write-Log "Drivers excluídos das atualizações de qualidade." "SUCESSO"
 } catch {
-    Write-Host "[ERRO] Falha ao configurar a politica de grupo: $_"
+    Write-Log "Falha ao ajustar política de drivers: $_" "ERRO"
 }
 
-# 6. Alterar plano de energia para "Alto Desempenho"
+# =====================================
+# 6. PLANO DE ENERGIA ALTO DESEMPENHO
+# =====================================
 try {
-    $powerPlan = powercfg -L | Select-String -Pattern "High performance"
-    if ($powerPlan) {
-        $powerPlanGUID = ($powerPlan -split " ")[3]
-        powercfg -S $powerPlanGUID
-        Write-Host "[SUCESSO] Plano de energia 'Alto Desempenho' ativado."
+    $plan = powercfg -l | Select-String "High performance"
+    if ($plan) {
+        $guid = ($plan -split " ")[3]
+        powercfg -S $guid
+        Write-Log "Plano de energia 'Alto Desempenho' ativado." "SUCESSO"
     } else {
-        Write-Host "[INFORMACAO] Plano de energia 'Alto Desempenho' nao encontrado."
+        Write-Log "Plano 'Alto Desempenho' não encontrado." "INFO"
     }
 } catch {
-    Write-Host "[ERRO] Falha ao alterar plano de energia: $_"
+    Write-Log "Erro ao configurar plano de energia: $_" "ERRO"
 }
 
-# 7. Desmarcar "Permitir acesso remoto" nas configuracoes de assistencia remota
+# =====================================
+# 7. DESATIVAR ASSISTÊNCIA REMOTA
+# =====================================
 try {
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Value 0
-    Write-Host "[SUCESSO] Acesso remoto desabilitado."
+    Write-Log "Assistência Remota desabilitada." "SUCESSO"
 } catch {
-    Write-Host "[ERRO] Falha ao desabilitar acesso remoto: $_"
+    Write-Log "Falha ao desabilitar Assistência Remota: $_" "ERRO"
 }
 
-# 8. Configuracoes de otimizacao para jogos no Windows 11
-# - Habilitar Modo de Jogo
+# =====================================
+# 8. ATIVAR MODO DE JOGO
+# =====================================
 try {
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\GameBar" -Name "AllowAutoGameMode" -Value 1
-    Write-Host "[SUCESSO] Modo de Jogo ativado com sucesso."
+    Write-Log "Modo de Jogo ativado." "SUCESSO"
 } catch {
-    Write-Host "[ERRO] Falha ao ativar o Modo de Jogo: $_"
+    Write-Log "Falha ao ativar Modo de Jogo: $_" "ERRO"
 }
 
-# - Desativar notificacoes durante o jogo
+# =====================================
+# 9. DESATIVAR NOTIFICAÇÕES DURANTE JOGOS
+# =====================================
 try {
     New-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\FocusAssist" -Name "FocusAssistState" -Value 2 -PropertyType DWord -Force | Out-Null
-    Write-Host "[SUCESSO] Notificacoes desativadas durante o jogo."
+    Write-Log "Notificações desativadas durante o jogo." "SUCESSO"
 } catch {
-    Write-Host "[ERRO] Falha ao desativar notificacoes: $_"
+    Write-Log "Erro ao configurar notificações: $_" "ERRO"
 }
 
-# - Configuracoes do adaptador de rede para jogos
+# =====================================
+# 10. OTIMIZAR ADAPTADOR DE REDE
+# =====================================
 try {
-    $adapterName = (Get-NetAdapter | Where-Object { $_.Status -eq "Up" }).Name
-    if ($adapterName) {
-        Write-Host "[INFORMACAO] Configurando adaptador de rede: $adapterName"
-        Set-NetAdapterAdvancedProperty -Name $adapterName -DisplayName "Flow Control" -DisplayValue "Rx & Tx Enabled"
-        Set-NetAdapterAdvancedProperty -Name $adapterName -DisplayName "Interrupt Moderation" -DisplayValue "Enabled"
-        New-NetIPAddress -InterfaceAlias $adapterName -IPAddress 192.168.1.100 -PrefixLength 24 -DefaultGateway 192.168.1.1 -ErrorAction Stop
-        Set-DnsClientServerAddress -InterfaceAlias $adapterName -ServerAddresses 1.1.1.1,8.8.8.8 -ErrorAction Stop
-        Write-Host "[SUCESSO] Configuracao do adaptador de rede otimizada."
+    $adapter = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1
+    if ($adapter) {
+        Write-Log "Otimizando adaptador de rede: $($adapter.Name)" "INFO"
+        Set-NetAdapterAdvancedProperty -Name $adapter.Name -DisplayName "Flow Control" -DisplayValue "Rx & Tx Enabled"
+        Set-NetAdapterAdvancedProperty -Name $adapter.Name -DisplayName "Interrupt Moderation" -DisplayValue "Enabled"
+        Write-Log "Configurações de rede aplicadas." "SUCESSO"
     } else {
-        Write-Host "[INFORMACAO] Nenhum adaptador de rede ativo encontrado para configuracao."
+        Write-Log "Nenhum adaptador ativo encontrado." "INFO"
     }
 } catch {
-    Write-Host "[ERRO] Falha ao configurar adaptador de rede: $_"
+    Write-Log "Falha ao otimizar adaptador de rede: $_" "ERRO"
 }
 
-# 9. Desativar Limitacao de Largura de Banda
+# =====================================
+# 11. LIMITAÇÃO DE LARGURA DE BANDA
+# =====================================
 try {
-    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched" -Name "NonBestEffortLimit" -Value 0 -PropertyType DWord -Force
-    Write-Host "[SUCESSO] Limitacao de largura de banda desativada."
+    $path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched"
+    if (-not (Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
+    Set-ItemProperty -Path $path -Name "NonBestEffortLimit" -Value 0 -Type DWord
+    Write-Log "Limitação de banda desativada." "SUCESSO"
 } catch {
-    Write-Host "[ERRO] Falha ao desativar limitacao de largura de banda: $_"
+    Write-Log "Falha ao remover limitação de banda: $_" "ERRO"
 }
 
-# 10. Priorizar Jogos no Gerenciador de Pacotes
+# =====================================
+# 12. LIMPAR ARQUIVOS TEMPORÁRIOS
+# =====================================
 try {
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\QoS" -Name "GamingTrafficPriority" -Value 1 -PropertyType DWord -Force
-    Write-Host "[SUCESSO] Jogos priorizados no gerenciador de pacotes."
+    Get-ChildItem -Path "$env:TEMP", "C:\Windows\Temp" -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+    Write-Log "Arquivos temporários e cache limpos." "SUCESSO"
 } catch {
-    Write-Host "[ERRO] Falha ao priorizar jogos: $_"
+    Write-Log "Erro ao limpar arquivos temporários: $_" "ERRO"
 }
 
-# 11. Desativar Atualizacoes Automaticas
-try {
-    Stop-Service -Name wuauserv -Force
-    Set-Service -Name wuauserv -StartupType Disabled
-    Write-Host "[SUCESSO] Atualizacoes automaticas desativadas."
-} catch {
-    Write-Host "[ERRO] Falha ao desativar atualizacoes automaticas: $_"
-}
-
-# 12. Limpar Arquivos Temporarios e Cache
-try {
-    Get-ChildItem -Path "C:\Windows\Temp", "C:\Users\$env:User Name\AppData\Local\Temp" -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-    Write-Host "[SUCESSO] Arquivos temporarios e cache limpos."
-} catch {
-    Write-Host "[ERRO] Falha ao limpar arquivos temporarios e cache: $_"
-}
-
-# 13. Desativar Windows Search
-try {
-    Stop-Service -Name "WSearch" -Force
-    Set-Service -Name "WSearch" -StartupType Disabled
-    Write-Host "[SUCESSO] Windows Search desativado."
-} catch {
-    Write-Host "[ERRO] Falha ao desativar Windows Search: $_"
-}
-
-# 14. Relatorio Final
-Write-Host "`nRelatorio de Otimizacao:"
-Write-Host "1. Downloads de outros dispositivos: Desativado"
-Write-Host "2. AMD Crash Defender: Desativado"
-Write-Host "3. Timer de Eventos de Alta Precis
+# =====================================
+# 13. RELATÓRIO FINAL
+# =====================================
+Write-Host "`n======================================="
+Write-Host "       RELATÓRIO DE OTIMIZAÇÃO"
+Write-Host "=======================================" -ForegroundColor Yellow
+Write-Log "Delivery Optimization: Desativado"
+Write-Log "AMD Crash Defender: Desativado"
+Write-Log "HPET: Desativado"
+Write-Log "Drivers em updates: Excluídos"
+Write-Log "Plano de energia: Alto desempenho"
+Write-Log "Assistência remota: Desativada"
+Write-Log "Modo de jogo: Ativado"
+Write-Log "Notificações: Desativadas"
+Write-Log "Adaptador de rede: Otimizado"
+Write-Log "Limitação de banda: Desativada"
+Write-Log "Arquivos temporários: Limpos"
+Write-Host "`n[FINALIZADO] Otimização concluída!" -ForegroundColor Green
